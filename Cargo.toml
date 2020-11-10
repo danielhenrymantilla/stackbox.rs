@@ -1,0 +1,33 @@
+[package]
+name = "stackbox"
+version = "0.0.2"
+authors = [
+    "Daniel Henry-Mantilla <daniel.henry.mantilla@gmail.com>",
+]
+edition = "2018"
+
+license = "Zlib OR MIT OR Apache-2.0"
+
+documentation = "https://docs.rs/stackbox"
+repository = "https://github.com/danielhenrymantilla/stackbox.rs"
+homepage = "https://crates.io/crates/stackbox"
+
+readme = "README.md"
+
+description = "`&own`ing references in stable Rust - no_std-friendly Box"
+keywords = [
+    "no_std",
+    "own",
+    "stack",
+    "move",
+    "unsized_rvalues",
+]
+categories = [
+    "rust-patterns",
+]
+
+[dependencies]
+paste = "1.0.2"
+
+[dev-dependencies]
+# with_locals = "0.3.0-rc1"
