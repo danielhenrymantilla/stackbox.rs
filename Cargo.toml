@@ -1,6 +1,6 @@
 [package]
 name = "stackbox"
-version = "0.0.2"
+version = "0.1.0-rc1"
 authors = [
     "Daniel Henry-Mantilla <daniel.henry.mantilla@gmail.com>",
 ]
@@ -23,11 +23,25 @@ keywords = [
     "unsized_rvalues",
 ]
 categories = [
+    "no-std",
     "rust-patterns",
 ]
 
 [dependencies]
 paste = "1.0.2"
 
+[features]
+alloc = []
+std = ["alloc"]
+
+const-generics = []
+
+default = ["alloc"]
+
+docs = []
+
 [dev-dependencies]
-# with_locals = "0.3.0-rc1"
+with_locals = "0.3.0-rc1"
+
+[package.metadata.docs.rs]
+all-features = true

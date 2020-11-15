@@ -1,5 +1,10 @@
 //! Since `StackBox<'_, dyn FnOnce…>` does not auto-implement `FnOnce…`, we
 //! need to do it manually.
+//!
+//! ### Higher-order lifetimes are not _directly_ supported by these types
+//!
+//! See [`custom_dyn!`][`crate::custom_dyn`] to know what this means, and a way
+//! to palliate the issue.
 #![allow(nonstandard_style)]
 
 use super::*;
@@ -78,6 +83,7 @@ generate!(_9 _8 _7 _6 _5 _4 _3 _2 _1 _0); macro_rules! generate {() => (); (
         where
             F : FnOnce($([</*Arg*/$_K>]),*) -> Ret,
         {
+            #[inline]
             fn fatten (it: StackBox<'frame, F>)
               -> Self
             {
@@ -98,6 +104,7 @@ generate!(_9 _8 _7 _6 _5 _4 _3 _2 _1 _0); macro_rules! generate {() => (); (
             F : FnOnce($([</*Arg*/$_K>]),*) -> Ret,
             F : Send,
         {
+            #[inline]
             fn fatten (it: StackBox<'frame, F>)
               -> Self
             {
@@ -112,6 +119,7 @@ generate!(_9 _8 _7 _6 _5 _4 _3 _2 _1 _0); macro_rules! generate {() => (); (
         impl<'frame, $([</*Arg*/$_K>] ,)* Ret, Sendness : ?Sized + T::Sendness>
             [<StackBoxDynFnOnce$_N>]<'frame, $([</*Arg*/$_K>] ,)* Ret, Sendness>
         {
+            #[inline]
             pub
             fn call (
                 self: Self $(,
@@ -130,6 +138,7 @@ generate!(_9 _8 _7 _6 _5 _4 _3 _2 _1 _0); macro_rules! generate {() => (); (
         impl<'frame, $([</*Arg*/$_K>] ,)* Ret, Sendness : ?Sized + T::Sendness> Drop
             for [<StackBoxDynFnOnce$_N>]<'frame, $([</*Arg*/$_K>] ,)* Ret, Sendness>
         {
+            #[inline]
             fn drop (self: &'_ mut Self)
             {
                 unsafe {

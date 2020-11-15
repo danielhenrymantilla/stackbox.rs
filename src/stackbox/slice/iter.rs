@@ -8,6 +8,7 @@ struct Iter<'frame, Item : 'frame> (
 impl<'frame, Item : 'frame> Iterator for Iter<'frame, Item> {
     type Item = Item;
 
+    #[inline]
     fn next (self: &'_ mut Iter<'frame, Item>)
       -> Option<Item>
     {
@@ -21,6 +22,7 @@ impl<'frame, Item : 'frame> IntoIterator
     type IntoIter = Iter<'frame, Item>;
     type Item = Item;
 
+    #[inline]
     fn into_iter (self: StackBox<'frame, [Item]>)
       -> Iter<'frame, Item>
     {
@@ -35,10 +37,10 @@ mod tests {
     {
         use ::stackbox::prelude::*;
 
-        let boxed_slice: StackBox<'_, [_]>; stackbox!([
+        stackbox!(let boxed_slice: StackBox<'_, [_]> = [
             String::from("Hello, "),
             String::from("World!"),
-        ] => boxed_slice);
+        ]);
         for s in boxed_slice {
             println!("{}", s);
             drop::<String>(s);
