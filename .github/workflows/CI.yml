@@ -96,7 +96,7 @@ jobs:
         with:
           command: test
           args: |
-            --tests
+            --doc
             --no-default-features
             --features docs
             ${{ matrix.feature--alloc-or-std }}
