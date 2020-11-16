@@ -101,6 +101,7 @@ jobs:
             --features docs
             ${{ matrix.feature--alloc-or-std }}
             ${{ matrix.feature--const-generics }}
+            -- --nocapture
 
   # == MIRI == #
   miri:

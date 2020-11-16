@@ -49,7 +49,6 @@ jobs:
           command: test
           args: |
             --no-default-features ${{ matrix.feature--alloc }}
-            -- --nocapture
 
   # == TEST with MIRI == #
   test-with-miri:
