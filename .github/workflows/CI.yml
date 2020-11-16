@@ -18,7 +18,6 @@ jobs:
           - stable
           - beta
         feature--alloc-or-std: ['', '--features alloc', '--features std']
-        feature--const-generics: ['', '--features const-generics']
     steps:
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
@@ -59,7 +58,7 @@ jobs:
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
-          profile: default
+          profile: minimal
           override: true
           toolchain: ${{ matrix.rust-toolchains }}
 
@@ -71,11 +70,43 @@ jobs:
         with:
           command: test
 
+  # == Test nightly ==
+  test-nightly:
+    name: Test nightly
+    runs-on: ubuntu-latest
+    needs: [build-and-test]
+    strategy:
+      fail-fast: false
+      matrix:
+        feature--alloc-or-std: ['', '--features alloc', '--features std']
+        feature--const-generics: ['', '--features const-generics']
+    steps:
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+
+      - name: Clone repo
+        uses: actions/checkout@v2
+
+      - name: Cargo test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: |
+            --tests
+            --no-default-features
+            --features docs
+            ${{ matrix.feature--alloc-or-std }}
+            ${{ matrix.feature--const-generics }}
+
   # == MIRI == #
   miri:
     name: Test with miri
     runs-on: [ubuntu-latest]
-    needs: [check]
+    needs: [test-nightly]
     strategy:
       matrix:
         feature--alloc: ['', '--features alloc']
