@@ -46,7 +46,10 @@ jobs:
       - name: Cargo test
         uses: actions-rs/cargo@v1
         with:
-          command: test --no-default-features ${{ matrix.feature--alloc }}
+          command: |
+            test
+              --no-default-features ${{ matrix.feature--alloc }}
+              -- --nocapture
 
   # == TEST with MIRI == #
   test-with-miri:
