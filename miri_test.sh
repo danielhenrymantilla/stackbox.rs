@@ -6,4 +6,4 @@ rustup set profile minimal
 rustup default "$MIRI_NIGHTLY" && echo "$MIRI_NIGHTLY" > rust-toolchain
 rustup component add miri
 
-# cargo miri test
+cargo miri test "$@"  # Forward script args

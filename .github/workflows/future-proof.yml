@@ -9,7 +9,7 @@ on:
 
 jobs:
   # == TEST == #
-  test-no-ui:
+  test:
     name: (Check & Build &) Test
     runs-on: ${{ matrix.os }}
     strategy:
@@ -25,11 +25,12 @@ jobs:
           - beta
           - nightly
         latest-lockfile: [true, false]
+        feature--alloc-or-std: ['', '--features alloc']
     steps:
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
-          profile: default
+          profile: minimal
           override: true
           toolchain: ${{ matrix.rust-toolchains }}
 
@@ -45,4 +46,21 @@ jobs:
       - name: Cargo test
         uses: actions-rs/cargo@v1
         with:
-          command: test
+          command: |
+            test
+              --no-default-features ${{ matrix.feature--alloc }}
+              -- --nocapture
+
+  # == TEST with MIRI == #
+  test-with-miri:
+    name: Test with Miri
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        feature--alloc: ['', '--features alloc']
+    steps:
+      - name: Clone repo
+        uses: actions/checkout@v2
+
+      - name: Test with miri
+        run: ./miri_test.sh --no-default-features ${{ matrix.feature--alloc }}
