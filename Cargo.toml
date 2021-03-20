@@ -1,6 +1,6 @@
 [package]
 name = "stackbox"
-version = "0.1.0"
+version = "0.1.1-rc1"
 authors = [
     "Daniel Henry-Mantilla <daniel.henry.mantilla@gmail.com>",
 ]
@@ -45,3 +45,6 @@ with_locals = "0.3.0-rc1"
 
 [package.metadata.docs.rs]
 all-features = true
+rustdoc-args = [
+    "--html-in-header", "fix-rustdoc-css.html",
+]
