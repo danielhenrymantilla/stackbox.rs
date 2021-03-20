@@ -84,7 +84,7 @@ trait IsArray<'frame> : 'frame {
 
 /// `Array = [Array::Item; N]`.
 impl<'frame, Array : IsArray<'frame>> StackBox<'frame, Array> {
-    /// Coerces a `StackBox<[T; N]>` into a `StackBox<[T; N]`.
+    /// Coerces a `StackBox<[T; N]>` into a `StackBox<[T]>`.
     ///
     /// ### Requirements
     ///
