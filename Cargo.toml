@@ -29,6 +29,7 @@ categories = [
 
 [dependencies]
 paste = "1.0.2"
+unsize = "1"
 
 [features]
 alloc = []

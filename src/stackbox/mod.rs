@@ -292,6 +292,19 @@ impl<'frame, T : ?Sized + 'frame> StackBox<'frame, T> {
             _covariant_lt: Default::default(),
         }
     }
+
+    #[inline]
+    pub(in crate)
+    fn into_inner_unique(self)
+        -> ptr::Unique<T>
+    {
+        let this = ManuallyDrop::new(self);
+        unsafe {
+            // Safety: moving out of this which is not dropped.
+            // This is basically destructuring self which impls `Drop`.
+            ::core::ptr::read(&this.unique_ptr)
+        }
+    }
 }
 
 impl<'frame, T : ?Sized + 'frame>
@@ -331,6 +344,37 @@ impl<T : ?Sized> Drop for StackBox<'_, T> {
             //
             //   - From the type invariant
             ptr::Unique::<T>::drop_in_place(&mut self.unique_ptr)
+        }
+    }
+}
+
+unsafe impl<'frame, T : 'frame, U: ?Sized + 'frame>
+    ::unsize::CoerciblePtr<U>
+for
+    StackBox<'frame, T>
+{
+    type Pointee = T;
+    type Output = StackBox<'frame, U>;
+
+    fn as_sized_ptr(self: &mut Self) -> *mut T {
+        &*self.unique_ptr as *const T as *mut T
+    }
+
+    unsafe fn replace_ptr(self, new: *mut U) -> StackBox<'frame, U> {
+        let _covariant_lt = self._covariant_lt;
+
+        let new_ptr = self
+            .into_inner_unique()
+            .into_raw_nonnull()
+            .replace_ptr(new);
+
+        // Safety: we've forgotten the old pointer and this is the correctly unsized old pointer so
+        // valid for the pointed-to memory.
+        let unique_ptr = ptr::Unique::from_raw(new_ptr.as_ptr());
+
+        StackBox {
+            unique_ptr,
+            _covariant_lt,
         }
     }
 }
