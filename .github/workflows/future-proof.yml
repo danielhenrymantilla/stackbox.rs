@@ -26,6 +26,7 @@ jobs:
           - nightly
         latest-lockfile: [true, false]
         feature--alloc-or-std: ['', '--features alloc']
+        feature--unsize: ['', '--features unsize']
     steps:
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
@@ -48,7 +49,7 @@ jobs:
         with:
           command: test
           args: |
-            --no-default-features ${{ matrix.feature--alloc }}
+            --no-default-features ${{ matrix.feature--alloc }} ${{ matrix.feature--unsize }}
 
   # == TEST with MIRI == #
   test-with-miri:
@@ -57,9 +58,10 @@ jobs:
     strategy:
       matrix:
         feature--alloc: ['', '--features alloc']
+        feature--unsize: ['', '--features unsize']
     steps:
       - name: Clone repo
         uses: actions/checkout@v2
 
       - name: Test with miri
-        run: ./miri_test.sh --no-default-features ${{ matrix.feature--alloc }}
+        run: ./miri_test.sh --no-default-features ${{ matrix.feature--alloc }} ${{ matrix.feature--unsize }}
