@@ -348,6 +348,21 @@ impl<T : ?Sized> Drop for StackBox<'_, T> {
     }
 }
 
+#[cfg(feature = "unsize")]
+/// Allows conversion to a `StackBox` containing an unsized type.
+///
+/// # Usage
+///
+/// ```
+/// use core::fmt::Display;
+/// use unsize::{Coercion, CoerceUnsize};
+/// use stackbox::prelude::*;
+///
+/// let slot = &mut mk_slot();
+/// let num = StackBox::<usize>::new_in(slot, 42);
+///
+/// let display: StackBox<dyn Display> = num.unsize(Coercion::to_display());
+/// ```
 unsafe impl<'frame, T : 'frame, U: ?Sized + 'frame>
     ::unsize::CoerciblePtr<U>
 for
