@@ -1,8 +1,11 @@
-use ::core::mem::ManuallyDrop;
+use ::core::mem::{ManuallyDrop, MaybeUninit};
 use crate::{prelude::*,
     ptr,
     Slot,
 };
+
+#[cfg(feature = "alloc")]
+use alloc::boxed::Box;
 
 pub use slice::iter;
 mod slice;
@@ -255,6 +258,22 @@ impl<'frame, T : 'frame> StackBox<'frame, T> {
             ::core::ptr::read::<T>(&**this)
         }
     }
+
+    // Dear Ralf Jung, please let us have MaybeUninit<T: ?Sized>.
+    // FIXME: this should 'just work' with a raw slot as well.
+    unsafe
+    fn assume_init(it: &'frame mut MaybeUninit<T>)
+      -> StackBox<'frame, T>
+    {
+        let unique_ptr = unsafe {
+            ptr::Unique::<T>::from_raw(it.as_mut_ptr())
+        };
+
+        StackBox {
+          unique_ptr,
+          _covariant_lt: Default::default(),
+        }
+    }
 }
 
 impl<'frame, T : ?Sized + 'frame> StackBox<'frame, T> {
@@ -304,6 +323,31 @@ impl<'frame, T : ?Sized + 'frame> StackBox<'frame, T> {
             // This is basically destructuring self which impls `Drop`.
             ::core::ptr::read(&this.unique_ptr)
         }
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl<'frame, T: 'frame> StackBox<'frame, T> {
+    /// Split an allocated instance into an owner of the value, and an owner of the allocation.
+    ///
+    /// The value is then dropped _not after_ the allocation but it may be dropped completely
+    /// independent from it. Additionally it is possible for the caller to reuse the allocation
+    /// after the value has been dropped.
+    ///
+    /// FIXME: should work for `Rc` and `Arc` <https://github.com/rust-lang/rust/pull/89215>
+    pub
+    fn take_from_box(
+        slot: &'frame mut Option<Box<MaybeUninit<T>>>,
+        value: Box<T>,
+    )
+        -> StackBox<'frame, T>
+    {
+        let raw_init = Box::into_raw(value) as *mut MaybeUninit<T>;
+        // Safety: MaybeUninit<T> matches layout of T.
+        let raw_init = unsafe { Box::from_raw(raw_init) };
+        let slot = &mut **slot.insert(raw_init);
+        // Safety: the MaybeUninit was never deinitialized.
+        unsafe { Self::assume_init(slot) }
     }
 }
 
