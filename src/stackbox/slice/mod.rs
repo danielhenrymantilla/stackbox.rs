@@ -1,89 +1,81 @@
 use super::*;
 
-pub
-mod iter;
+pub mod iter;
 
-impl<'frame, Item : 'frame> StackBox<'frame, [Item]> {
+impl<'frame, Item: 'frame> Default for StackBox<'frame, [Item]> {
+    fn default() -> Self {
+        unsafe {
+            // Safety: empty slice.
+            StackBox::assume_owns_all(&mut [])
+        }
+    }
+}
+
+impl<'frame, Item: 'frame> StackBox<'frame, [Item]> {
     /// # Safety
     ///
     /// Same requirements as [`StackBox::assume_owns`].
     #[inline]
-    unsafe
-    fn assume_owns_all (
-        slice: &'frame mut [ManuallyDrop<Item>]
-    ) -> StackBox<'frame, [Item]>
-    {
+    unsafe fn assume_owns_all(slice: &'frame mut [ManuallyDrop<Item>]) -> StackBox<'frame, [Item]> {
         let fat_ptr: *mut [ManuallyDrop<Item>] = slice;
         let fat_ptr: *mut ManuallyDrop<[Item]> = fat_ptr as _;
         let slice: &'frame mut ManuallyDrop<[Item]> = &mut *fat_ptr;
         StackBox::assume_owns(slice)
     }
 
+    /// Convert a [`StackBox`] slice
+    pub fn assert_singleton(self: StackBox<'frame, [Item]>) -> StackBox<'frame, Item> {
+        assert_eq!(self.len(), 1);
+        let mut this = ManuallyDrop::new(self);
+        let (r, _) = this.split_last_mut().unwrap();
+        // Safety: recovering back the ownership initially yielded.
+        unsafe { StackBox::assume_owns(&mut *(r as *mut Item).cast()) }
+    }
+
     /// [`Vec`]-like behavior for [`StackBox`]: pop its first item.
-    pub
-    fn stackbox_pop (self: &'_ mut StackBox<'frame, [Item]>)
-      -> Option<Item>
-    {
+    pub fn stackbox_pop(self: &'_ mut StackBox<'frame, [Item]>) -> Option<Item> {
         if self.is_empty() {
             return None;
         }
-        let placeholder = unsafe {
-            // Safety: empty slice.
-            StackBox::assume_owns_all(&mut [])
-        };
-        let this = ::core::mem::replace(self, placeholder);
+        let this = core::mem::take(self);
         let (hd, tl) = this.stackbox_split_at(1);
         *self = tl;
-        Some(unsafe {
-            ::core::ptr::read(&ManuallyDrop::new(hd)[0])
-        })
+        Some(hd.assert_singleton().into_inner())
     }
 
     /// [`StackBox`] / owned equivalent of the `slice` splitting methods.
     #[inline]
-    pub
-    fn stackbox_split_at (self: StackBox<'frame, [Item]>, mid: usize)
-      -> (
-            StackBox<'frame, [Item]>,
-            StackBox<'frame, [Item]>,
-        )
-    {
+    pub fn stackbox_split_at(
+        self: StackBox<'frame, [Item]>,
+        mid: usize,
+    ) -> (StackBox<'frame, [Item]>, StackBox<'frame, [Item]>) {
         assert!(mid <= self.len()); // before the MD
         let mut this = ::core::mem::ManuallyDrop::new(self);
-        let (hd, tl): (&'_ mut [Item], &'_ mut [Item]) =
-            this.split_at_mut(mid)
-        ;
+        let (hd, tl): (&'_ mut [Item], &'_ mut [Item]) = this.split_at_mut(mid);
         unsafe {
             // Safety: recovering back the ownership initially yielded.
             (
-                Self::assume_owns_all(
-                    ::core::slice::from_raw_parts_mut(
-                        hd.as_mut_ptr().cast(),
-                        hd.len(),
-                    )
-                ),
-                Self::assume_owns_all(
-                    ::core::slice::from_raw_parts_mut(
-                        tl.as_mut_ptr().cast(),
-                        tl.len(),
-                    )
-                ),
+                Self::assume_owns_all(::core::slice::from_raw_parts_mut(
+                    hd.as_mut_ptr().cast(),
+                    hd.len(),
+                )),
+                Self::assume_owns_all(::core::slice::from_raw_parts_mut(
+                    tl.as_mut_ptr().cast(),
+                    tl.len(),
+                )),
             )
         }
     }
 }
 
-pub
-trait IsArray<'frame> : 'frame {
-    type Item : 'frame;
+pub trait IsArray<'frame>: 'frame {
+    type Item: 'frame;
 
-    fn into_slice (this: StackBox<'frame, Self>)
-      -> StackBox<'frame, [Self::Item]>
-    ;
+    fn into_slice(this: StackBox<'frame, Self>) -> StackBox<'frame, [Self::Item]>;
 }
 
 /// `Array = [Array::Item; N]`.
-impl<'frame, Array : IsArray<'frame>> StackBox<'frame, Array> {
+impl<'frame, Array: IsArray<'frame>> StackBox<'frame, Array> {
     /// Coerces a `StackBox<[T; N]>` into a `StackBox<[T]>`.
     ///
     /// ### Requirements
@@ -111,10 +103,7 @@ impl<'frame, Array : IsArray<'frame>> StackBox<'frame, Array> {
     ///     let _: String = boxed_slice.stackbox_pop().unwrap();
     ///     ```
     #[inline]
-    pub
-    fn into_slice (self: StackBox<'frame, Array>)
-      -> StackBox<'frame, [Array::Item]>
-    {
+    pub fn into_slice(self: StackBox<'frame, Array>) -> StackBox<'frame, [Array::Item]> {
         IsArray::into_slice(self)
     }
 }
