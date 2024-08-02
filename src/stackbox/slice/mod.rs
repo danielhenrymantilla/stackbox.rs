@@ -32,8 +32,16 @@ impl<'frame, Item: 'frame> StackBox<'frame, [Item]> {
         unsafe { StackBox::assume_owns(&mut *(r as *mut Item).cast()) }
     }
 
-    /// [`Vec`]-like behavior for [`StackBox`]: pop its first item.
-    pub fn stackbox_pop(self: &'_ mut StackBox<'frame, [Item]>) -> Option<Item> {
+    /// [`VecDeque`](alloc::collections::VecDeque)-like behavior for [`StackBox`]: pop its first item.
+    ///
+    /// ```
+    /// use stackbox::Slot;
+    /// let mut slot = Slot::VACANT;
+    /// let arr = slot.stackbox([0, 1, 2]);
+    /// let mut slice = arr.into_slice();
+    /// assert_eq!(slice.pop_front(), Some(0));
+    /// ```
+    pub fn pop_front(self: &'_ mut StackBox<'frame, [Item]>) -> Option<Item> {
         if self.is_empty() {
             return None;
         }
@@ -41,6 +49,32 @@ impl<'frame, Item: 'frame> StackBox<'frame, [Item]> {
         let (hd, tl) = this.stackbox_split_at(1);
         *self = tl;
         Some(hd.assert_singleton().into_inner())
+    }
+
+    /// [`VecDeque`](alloc::collections::VecDeque)-like behavior for [`StackBox`]: pop its last item.
+    ///
+    /// ```
+    /// use stackbox::Slot;
+    /// let mut slot = Slot::VACANT;
+    /// let arr = slot.stackbox([0, 1, 2]);
+    /// let mut slice = arr.into_slice();
+    /// assert_eq!(slice.pop_back(), Some(2));
+    /// ```
+    pub fn pop_back(self: &'_ mut StackBox<'frame, [Item]>) -> Option<Item> {
+        if self.is_empty() {
+            return None;
+        }
+        let len = self.len();
+        let this = core::mem::take(self);
+        let (hd, tl) = this.stackbox_split_at(len - 1);
+        *self = hd;
+        Some(tl.assert_singleton().into_inner())
+    }
+
+    #[deprecated]
+    /// Use [`pop_front`](StackBox::pop_front) instead
+    pub fn stackbox_pop(self: &'_ mut StackBox<'frame, [Item]>) -> Option<Item> {
+        self.pop_front()
     }
 
     /// [`StackBox`] / owned equivalent of the `slice` splitting methods.
@@ -100,7 +134,7 @@ impl<'frame, Array: IsArray<'frame>> StackBox<'frame, Array> {
     ///     let mut boxed_slice: StackBox<'_, [String]> = stackbox!(slot, [
     ///         "Hello, World!".into()
     ///     ]);
-    ///     let _: String = boxed_slice.stackbox_pop().unwrap();
+    ///     let _: String = boxed_slice.pop_front().unwrap();
     ///     ```
     #[inline]
     pub fn into_slice(self: StackBox<'frame, Array>) -> StackBox<'frame, [Array::Item]> {
