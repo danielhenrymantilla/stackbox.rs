@@ -6,21 +6,19 @@ mod any {
     use super::*;
 
     #[test]
-    fn coerce_unsync_unsend_into_any ()
-    {
+    fn coerce_unsync_unsend_into_any() {
         stackbox!(let mut stackbox = ::core::ptr::null::<()>());
         let mut dyn_any: StackBoxDynAny<'_> = stackbox.into_dyn();
         assert!(dyn_any.is::<*const ()>());
         assert!(dyn_any.is::<bool>().not());
         let &(_): &'_ (*const ()) = dyn_any.downcast_ref().unwrap();
-        let &mut(_): &'_ mut (*const ()) = dyn_any.downcast_mut().unwrap();
+        let &mut (_): &'_ mut (*const ()) = dyn_any.downcast_mut().unwrap();
         stackbox = dyn_any.downcast().unwrap();
         drop(stackbox);
     }
 
     #[test]
-    fn coerce_sync_unsend_into_sync_any ()
-    {
+    fn coerce_sync_unsend_into_sync_any() {
         #[derive(Default)]
         struct PhantomUnsend(::core::marker::PhantomData<*mut ()>);
         unsafe impl Sync for PhantomUnsend {}
@@ -30,22 +28,19 @@ mod any {
     }
 
     #[test]
-    fn coerce_send_unsync_into_send_any ()
-    {
+    fn coerce_send_unsync_into_send_any() {
         stackbox!(let stackbox = ::core::cell::Cell::new(0_u8));
         let _: StackBoxDynAny<'_, dyn Send> = stackbox.into_dyn();
     }
 
     #[test]
-    fn coerce_send_sync_into_send_sync_any ()
-    {
+    fn coerce_send_sync_into_send_sync_any() {
         stackbox!(let stackbox = ());
         let _: StackBoxDynAny<'_, dyn Send + Sync> = stackbox.into_dyn();
     }
 
     #[test]
-    fn test_drops ()
-    {
+    fn test_drops() {
         let rc = ::std::rc::Rc::new(());
         let count = || ::std::rc::Rc::strong_count(&rc);
         let rc = || rc.clone();
@@ -112,8 +107,7 @@ mod fn_once {
     use super::*;
 
     #[test]
-    fn move_semantics ()
-    {
+    fn move_semantics() {
         let not_copy: [&'static mut (); 0] = [];
         stackbox!(let stackbox_fn_once = || drop(not_copy));
         let mut dyn_fn_once: StackBoxDynFnOnce_0<'_, ()> = stackbox_fn_once.into_dyn();
@@ -136,11 +130,13 @@ mod fn_once {
     }
 
     #[test]
-    fn test_drops ()
-    {
+    fn test_drops() {
         let rc = ::std::rc::Rc::new(());
         let count = || ::std::rc::Rc::strong_count(&rc);
-        let rc = || { let rc = rc.clone(); move || drop(rc) };
+        let rc = || {
+            let rc = rc.clone();
+            move || drop(rc)
+        };
 
         stackbox!(let stackbox = rc());
         assert_eq!(count(), 2);
@@ -196,12 +192,9 @@ mod custom_dyn {
         }
 
         #[test]
-        fn fn_once_higher_order_param ()
-        {
+        fn fn_once_higher_order_param() {
             stackbox!(let f = |_: &str| ());
-            let f: StackBoxDynFnOnceRef<'_, str, dyn Send + Sync> =
-                f.into_dyn()
-            ;
+            let f: StackBoxDynFnOnceRef<'_, str, dyn Send + Sync> = f.into_dyn();
             let f = |s: &str| f.call(s);
             f("");
         }
@@ -228,11 +221,13 @@ mod custom_dyn {
         }
 
         #[test]
-        fn test_drops ()
-        {
+        fn test_drops() {
             let rc = ::std::rc::Rc::new(());
             let count = || ::std::rc::Rc::strong_count(&rc);
-            let rc = || { let rc = rc.clone(); move |_: &str| drop(rc) };
+            let rc = || {
+                let rc = rc.clone();
+                move |_: &str| drop(rc)
+            };
 
             stackbox!(let stackbox = rc());
             assert_eq!(count(), 2);
@@ -259,7 +254,10 @@ mod custom_dyn {
             assert_eq!(count(), 2);
 
             // The following would fail should the lifetime param not be higher-order
-            if false { f(&String::new()); loop {} }
+            if false {
+                f(&String::new());
+                loop {}
+            }
             f(&String::new());
             assert_eq!(count(), 1);
 
@@ -275,15 +273,17 @@ mod custom_dyn {
             let dyn_fn: StackBoxDynFnOnceRef<'_, str> = stackbox.into_dyn();
             assert_eq!(count(), 2);
             // The following would fail should the lifetime param not be higher-order
-            if false { dyn_fn.call(&String::new()); loop {} }
+            if false {
+                dyn_fn.call(&String::new());
+                loop {}
+            }
             dyn_fn.call(&String::new());
             assert_eq!(count(), 1);
         }
     }
 
     #[test]
-    fn non_owned_receiver ()
-    {
+    fn non_owned_receiver() {
         use ::core::any;
 
         /// Hack to have invocations work inside function bodies for the MSRV.
@@ -353,4 +353,5 @@ macro_rules! compile_fail {(#[doc = $doc:expr] $item:item) => (#[doc = $doc] $it
         )]
         pub mod $name {}
     }
-)} use compile_fail;
+)}
+use compile_fail;

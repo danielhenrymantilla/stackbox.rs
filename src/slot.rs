@@ -18,11 +18,7 @@ use ::core::{
 ///
 /// [`.stackbox()`]: `Slot::stackbox`
 #[inline(always)]
-pub
-const
-fn mk_slot<T> ()
-  -> Slot<T>
-{
+pub const fn mk_slot<T>() -> Slot<T> {
     Slot::VACANT
 }
 
@@ -32,8 +28,7 @@ fn mk_slot<T> ()
 /// If needed, multiple such slots can be defined within the local scope and
 /// bound to a variadic number of identifiers (variable names) using the
 /// [`mk_slots!`][`crate::mk_slots`] macro.
-pub
-struct Slot<T> {
+pub struct Slot<T> {
     place: mem::MaybeUninit<T>,
     // /// Invariant lifetime just in case.
     // _borrow_mut_once: PhantomData<fn(&()) -> &mut &'frame ()>,
@@ -48,19 +43,16 @@ impl<T> Slot<T> {
     ///   - or the equivalent [`.stackbox()`] convenience method on [`Slot`]s.
     ///
     /// [`.stackbox()`]: `Slot::stackbox`
-    pub
-    const VACANT: Self = Slot {
+    pub const VACANT: Self = Slot {
         place: mem::MaybeUninit::uninit(),
         // _borrow_mut_once: PhantomData,
     };
 
     /// Convenience shortcut for [`StackBox::new_in()`].
     #[inline(always)]
-    pub
-    fn stackbox<'frame> (self: &'frame mut Slot<T>, value: T)
-      -> StackBox<'frame, T>
+    pub fn stackbox<'frame>(self: &'frame mut Slot<T>, value: T) -> StackBox<'frame, T>
     where
-        T : 'frame,
+        T: 'frame,
     {
         let ptr = Self::__init_raw(self, value);
         unsafe {
@@ -69,17 +61,16 @@ impl<T> Slot<T> {
         }
     }
 
-    #[doc(hidden)] /** Not part of the public API */ pub
-    fn __init_raw<'frame> (this: &'frame mut Slot<T>, value: T)
-      -> &'frame mut ::core::mem::ManuallyDrop<T>
-    {
+    #[doc(hidden)]
+    /** Not part of the public API */
+    pub fn __init_raw<'frame>(
+        this: &'frame mut Slot<T>,
+        value: T,
+    ) -> &'frame mut ::core::mem::ManuallyDrop<T> {
         this.place = mem::MaybeUninit::new(value);
         unsafe {
             // Safety: value has been initialized.
-            mem::transmute::<
-                &'_ mut mem::MaybeUninit<T>,
-                &'_ mut mem::ManuallyDrop<T>,
-            >(
+            mem::transmute::<&'_ mut mem::MaybeUninit<T>, &'_ mut mem::ManuallyDrop<T>>(
                 &mut this.place,
             )
         }
