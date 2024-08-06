@@ -9,9 +9,12 @@
 
 use super::*;
 
-mod T { pub use crate::marker::Sendness::T as Sendness; }
+mod T {
+    pub use crate::marker::Sendness::T as Sendness;
+}
 
-generate!(_9 _8 _7 _6 _5 _4 _3 _2 _1 _0); macro_rules! generate {() => (); (
+generate!(_9 _8 _7 _6 _5 _4 _3 _2 _1 _0);
+macro_rules! generate {() => (); (
     $_N:tt $($_K:tt)*
 ) => (generate! { $($_K)* } ::paste::paste! {
     pub use [<FnOnce$_N>]::[<StackBoxDynFnOnce$_N>];
@@ -161,4 +164,5 @@ generate!(_9 _8 _7 _6 _5 _4 _3 _2 _1 _0); macro_rules! generate {() => (); (
                 [<StackBoxDynFnOnce$_N>]<'frame, $([</*Arg*/$_K>] ,)* Ret, dyn Send>
             {}
     }
-})} use generate;
+})}
+use generate;
