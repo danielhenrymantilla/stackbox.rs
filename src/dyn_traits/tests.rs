@@ -323,6 +323,32 @@ mod custom_dyn {
         assert_eq!(it.type_id(), any::TypeId::of::<()>());
         assert_eq!(it.type_id(), any::TypeId::of::<()>());
     }
+
+    #[test]
+    fn notrivial_where_statement ()
+    {
+        pub trait TestTrait {}
+        impl TestTrait for str {}
+
+        custom_dyn! {
+            dyn TestTraitFnOnce<Arg> : FnOnce(&Arg)
+            where { Arg : ?Sized + TestTrait }
+            {
+                fn call (self: Self, s: &'_ Arg)
+                {
+                    self(s)
+                }
+            }
+        }
+
+        stackbox!(let f = |_: &str| ());
+        let f: StackBoxDynTestTraitFnOnce<'_, str, dyn Send + Sync> =
+            f.into_dyn()
+        ;
+        let f = |s: &str| f.call(s);
+        f("");
+    }
+
 }
 
 macro_rules! compile_fail {(#[doc = $doc:expr] $item:item) => (#[doc = $doc] $item); (

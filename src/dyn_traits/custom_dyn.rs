@@ -815,6 +815,7 @@ macro_rules! custom_dyn {(
                             $AutoTrait
                         for
                             [<StackBoxDyn $Trait>]<'__frame, $($($lt ,)* $($T ,)*)? $Marker>
+                        $(where $($wc)* )?
                         {}
                 )*
             )*
